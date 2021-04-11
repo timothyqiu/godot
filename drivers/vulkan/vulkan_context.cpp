@@ -304,6 +304,7 @@ Error VulkanContext::_initialize_extensions() {
 	enabled_layer_count = 0;
 	enabled_debug_utils = false;
 	enabled_debug_report = false;
+	enabled_get_physical_device_properties2 = false;
 	/* Look for instance extensions */
 	VkBool32 surfaceExtFound = 0;
 	VkBool32 platformSurfaceExtFound = 0;
@@ -338,6 +339,10 @@ Error VulkanContext::_initialize_extensions() {
 			if (!strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, instance_extensions[i].extensionName)) {
 				extension_names[enabled_extension_count++] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
 				enabled_debug_utils = true;
+			}
+			if (!strcmp(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, instance_extensions[i].extensionName)) {
+				extension_names[enabled_extension_count++] = VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME;
+				enabled_get_physical_device_properties2 = true;
 			}
 			if (enabled_extension_count >= MAX_EXTENSIONS) {
 				free(instance_extensions);
@@ -501,39 +506,43 @@ Error VulkanContext::_check_capabilities() {
 	// check subgroups
 	// https://www.khronos.org/blog/vulkan-subgroup-tutorial
 	// for Vulkan 1.0 vkGetPhysicalDeviceProperties2 is not available, including not in the loader we compile against on Android.
-	_vkGetPhysicalDeviceProperties2 func = (_vkGetPhysicalDeviceProperties2)vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceProperties2");
-	if (func != nullptr) {
-		VkPhysicalDeviceSubgroupProperties subgroupProperties;
-		subgroupProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES;
-		subgroupProperties.pNext = nullptr;
 
-		VkPhysicalDeviceProperties2 physicalDeviceProperties;
-		physicalDeviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-		physicalDeviceProperties.pNext = &subgroupProperties;
+	if (enabled_get_physical_device_properties2) {
+		_vkGetPhysicalDeviceProperties2 func = (_vkGetPhysicalDeviceProperties2)vkGetInstanceProcAddr(inst, "vkGetPhysicalDeviceProperties2");
+		if (func != nullptr) {
+			VkPhysicalDeviceSubgroupProperties subgroupProperties;
+			subgroupProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES;
+			subgroupProperties.pNext = nullptr;
 
-		func(gpu, &physicalDeviceProperties);
+			VkPhysicalDeviceProperties2 physicalDeviceProperties;
+			physicalDeviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+			physicalDeviceProperties.pNext = &subgroupProperties;
 
-		subgroup_capabilities.size = subgroupProperties.subgroupSize;
-		subgroup_capabilities.supportedStages = subgroupProperties.supportedStages;
-		subgroup_capabilities.supportedOperations = subgroupProperties.supportedOperations;
-		// Note: quadOperationsInAllStages will be true if:
-		// - supportedStages has VK_SHADER_STAGE_ALL_GRAPHICS + VK_SHADER_STAGE_COMPUTE_BIT
-		// - supportedOperations has VK_SUBGROUP_FEATURE_QUAD_BIT
-		subgroup_capabilities.quadOperationsInAllStages = subgroupProperties.quadOperationsInAllStages;
+			func(gpu, &physicalDeviceProperties);
 
-		// only output this when debugging?
-		print_line("- Vulkan subgroup size " + itos(subgroup_capabilities.size));
-		print_line("- Vulkan subgroup stages " + subgroup_capabilities.supported_stages_desc());
-		print_line("- Vulkan subgroup supported ops " + subgroup_capabilities.supported_operations_desc());
-		if (subgroup_capabilities.quadOperationsInAllStages) {
-			print_line("- Vulkan subgroup quad operations in all stages");
+			subgroup_capabilities.size = subgroupProperties.subgroupSize;
+			subgroup_capabilities.supportedStages = subgroupProperties.supportedStages;
+			subgroup_capabilities.supportedOperations = subgroupProperties.supportedOperations;
+			// Note: quadOperationsInAllStages will be true if:
+			// - supportedStages has VK_SHADER_STAGE_ALL_GRAPHICS + VK_SHADER_STAGE_COMPUTE_BIT
+			// - supportedOperations has VK_SUBGROUP_FEATURE_QUAD_BIT
+			subgroup_capabilities.quadOperationsInAllStages = subgroupProperties.quadOperationsInAllStages;
+
+			// only output this when debugging?
+			print_line("- Vulkan subgroup size " + itos(subgroup_capabilities.size));
+			print_line("- Vulkan subgroup stages " + subgroup_capabilities.supported_stages_desc());
+			print_line("- Vulkan subgroup supported ops " + subgroup_capabilities.supported_operations_desc());
+			if (subgroup_capabilities.quadOperationsInAllStages) {
+				print_line("- Vulkan subgroup quad operations in all stages");
+			}
+			return OK;
 		}
-	} else {
-		subgroup_capabilities.size = 0;
-		subgroup_capabilities.supportedStages = 0;
-		subgroup_capabilities.supportedOperations = 0;
-		subgroup_capabilities.quadOperationsInAllStages = false;
 	}
+
+	subgroup_capabilities.size = 0;
+	subgroup_capabilities.supportedStages = 0;
+	subgroup_capabilities.supportedOperations = 0;
+	subgroup_capabilities.quadOperationsInAllStages = false;
 
 	return OK;
 }

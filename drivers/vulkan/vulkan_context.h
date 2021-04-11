@@ -144,6 +144,7 @@ private:
 	uint32_t enabled_extension_count = 0;
 	const char *extension_names[MAX_EXTENSIONS];
 	bool enabled_debug_utils = false;
+	bool enabled_get_physical_device_properties2 = false;
 
 	/**
 	 * True if VK_EXT_debug_report extension is used. VK_EXT_debug_report is deprecated but it is
