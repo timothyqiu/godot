@@ -299,6 +299,7 @@ private:
 	bool on_wall;
 	bool sync_to_physics = false;
 	MovingPlatformApplyVelocityOnLeave moving_platform_apply_velocity_on_leave = PLATFORM_VEL_ON_LEAVE_ALWAYS;
+	Collision snap_collision;
 
 	Vector<Collision> colliders;
 	Vector<Ref<KinematicCollision>> slide_colliders;
@@ -307,6 +308,7 @@ private:
 	Ref<KinematicCollision> _move(const Vector3 &p_motion, bool p_infinite_inertia = true, bool p_exclude_raycast_shapes = true, bool p_test_only = false);
 	Ref<KinematicCollision> _get_slide_collision(int p_bounce);
 	Ref<KinematicCollision> _get_last_slide_collision();
+	Ref<KinematicCollision> _get_snap_collision();
 
 	Transform last_valid_transform;
 	void _direct_state_changed(Object *p_state);

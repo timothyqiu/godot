@@ -1195,6 +1195,7 @@ Vector3 KinematicBody::_move_and_slide_internal(const Vector3 &p_linear_velocity
 			if (up_direction != Vector3()) {
 				if (Math::acos(col.normal.dot(up_direction)) <= p_floor_max_angle + FLOOR_ANGLE_THRESHOLD) {
 					on_floor = true;
+					snap_collision = col;
 					floor_normal = col.normal;
 					on_floor_body_rid = col.collider_rid;
 					on_floor_body_id = col.collider;
@@ -1395,6 +1396,16 @@ Ref<KinematicCollision> KinematicBody::_get_last_slide_collision() {
 	return _get_slide_collision(colliders.size() - 1);
 }
 
+Ref<KinematicCollision> KinematicBody::_get_snap_collision() {
+	if (on_floor && colliders.empty()) {
+		Ref<KinematicCollision> collision = memnew(KinematicCollision);
+		collision->collision = snap_collision;
+		collision->owner = this;
+		return collision;
+	}
+	return Ref<KinematicCollision>();
+}
+
 void KinematicBody::set_sync_to_physics(bool p_enable) {
 	if (sync_to_physics == p_enable) {
 		return;
@@ -1487,6 +1498,7 @@ void KinematicBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_slide_count"), &KinematicBody::get_slide_count);
 	ClassDB::bind_method(D_METHOD("get_slide_collision", "slide_idx"), &KinematicBody::_get_slide_collision);
 	ClassDB::bind_method(D_METHOD("get_last_slide_collision"), &KinematicBody::_get_last_slide_collision);
+	ClassDB::bind_method(D_METHOD("get_snap_collision"), &KinematicBody::_get_snap_collision);
 
 	ClassDB::bind_method(D_METHOD("set_sync_to_physics", "enable"), &KinematicBody::set_sync_to_physics);
 	ClassDB::bind_method(D_METHOD("is_sync_to_physics_enabled"), &KinematicBody::is_sync_to_physics_enabled);
