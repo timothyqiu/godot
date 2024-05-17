@@ -31,6 +31,7 @@
 #include "editor_properties.h"
 
 #include "core/config/project_settings.h"
+#include "core/object/object.h"
 #include "editor/create_dialog.h"
 #include "editor/editor_node.h"
 #include "editor/editor_properties_array_dict.h"
@@ -47,7 +48,6 @@
 #include "editor/property_selector.h"
 #include "editor/scene_tree_dock.h"
 #include "editor/themes/editor_scale.h"
-#include "editor/themes/editor_theme_manager.h"
 #include "scene/2d/gpu_particles_2d.h"
 #include "scene/3d/fog_volume.h"
 #include "scene/3d/gpu_particles_3d.h"
@@ -55,7 +55,6 @@
 #include "scene/main/window.h"
 #include "scene/resources/font.h"
 #include "scene/resources/mesh.h"
-#include "scene/resources/packed_scene.h"
 #include "scene/resources/visual_shader_nodes.h"
 
 ///////////////////// Nil /////////////////////////
@@ -1146,54 +1145,46 @@ void EditorPropertyLayers::update_property() {
 	grid->set_flag(value);
 }
 
-void EditorPropertyLayers::setup(LayerType p_layer_type) {
-	layer_type = p_layer_type;
+void EditorPropertyLayers::_refresh_names() {
 	int layer_group_size = 0;
-	int layer_count = 0;
-	switch (p_layer_type) {
-		case LAYER_RENDER_2D: {
+	switch (layer_type) {
+		case ProjectSettings::LAYER_RENDER_2D: {
 			basename = "layer_names/2d_render";
 			layer_group_size = 5;
-			layer_count = 20;
 		} break;
 
-		case LAYER_PHYSICS_2D: {
+		case ProjectSettings::LAYER_PHYSICS_2D: {
 			basename = "layer_names/2d_physics";
 			layer_group_size = 4;
-			layer_count = 32;
 		} break;
 
-		case LAYER_NAVIGATION_2D: {
+		case ProjectSettings::LAYER_NAVIGATION_2D: {
 			basename = "layer_names/2d_navigation";
 			layer_group_size = 4;
-			layer_count = 32;
 		} break;
 
-		case LAYER_RENDER_3D: {
+		case ProjectSettings::LAYER_RENDER_3D: {
 			basename = "layer_names/3d_render";
 			layer_group_size = 5;
-			layer_count = 20;
 		} break;
 
-		case LAYER_PHYSICS_3D: {
+		case ProjectSettings::LAYER_PHYSICS_3D: {
 			basename = "layer_names/3d_physics";
 			layer_group_size = 4;
-			layer_count = 32;
 		} break;
 
-		case LAYER_NAVIGATION_3D: {
+		case ProjectSettings::LAYER_NAVIGATION_3D: {
 			basename = "layer_names/3d_navigation";
 			layer_group_size = 4;
-			layer_count = 32;
 		} break;
 
-		case LAYER_AVOIDANCE: {
+		case ProjectSettings::LAYER_AVOIDANCE: {
 			basename = "layer_names/avoidance";
 			layer_group_size = 4;
-			layer_count = 32;
 		} break;
 	}
 
+	const int layer_count = ProjectSettings::get_singleton()->get_layer_count(layer_type);
 	Vector<String> names;
 	Vector<String> tooltips;
 	for (int i = 0; i < layer_count; i++) {
@@ -1276,14 +1267,9 @@ void EditorPropertyLayers::_menu_pressed(int p_menu) {
 	}
 }
 
-void EditorPropertyLayers::_refresh_names() {
-	setup(layer_type);
-}
+EditorPropertyLayers::EditorPropertyLayers(ProjectSettings::LayerType p_layer_type) {
+	layer_type = p_layer_type;
 
-void EditorPropertyLayers::_bind_methods() {
-}
-
-EditorPropertyLayers::EditorPropertyLayers() {
 	HBoxContainer *hb = memnew(HBoxContainer);
 	hb->set_clip_contents(true);
 	add_child(hb);
@@ -1307,6 +1293,8 @@ EditorPropertyLayers::EditorPropertyLayers() {
 	layers->connect("id_pressed", callable_mp(this, &EditorPropertyLayers::_menu_pressed));
 	layers->connect("popup_hide", callable_mp((BaseButton *)button, &BaseButton::set_pressed).bind(false));
 	ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &EditorPropertyLayers::_refresh_names));
+
+	_refresh_names();
 }
 
 ///////////////////// INT /////////////////////////
@@ -3546,42 +3534,20 @@ EditorProperty *EditorInspectorDefaultPlugin::get_editor_for_property(Object *p_
 				editor->setup(options);
 				return editor;
 
-			} else if (p_hint == PROPERTY_HINT_LAYERS_2D_PHYSICS ||
-					p_hint == PROPERTY_HINT_LAYERS_2D_RENDER ||
-					p_hint == PROPERTY_HINT_LAYERS_2D_NAVIGATION ||
-					p_hint == PROPERTY_HINT_LAYERS_3D_PHYSICS ||
-					p_hint == PROPERTY_HINT_LAYERS_3D_RENDER ||
-					p_hint == PROPERTY_HINT_LAYERS_3D_NAVIGATION ||
-					p_hint == PROPERTY_HINT_LAYERS_AVOIDANCE) {
-				EditorPropertyLayers::LayerType lt = EditorPropertyLayers::LAYER_RENDER_2D;
-				switch (p_hint) {
-					case PROPERTY_HINT_LAYERS_2D_RENDER:
-						lt = EditorPropertyLayers::LAYER_RENDER_2D;
-						break;
-					case PROPERTY_HINT_LAYERS_2D_PHYSICS:
-						lt = EditorPropertyLayers::LAYER_PHYSICS_2D;
-						break;
-					case PROPERTY_HINT_LAYERS_2D_NAVIGATION:
-						lt = EditorPropertyLayers::LAYER_NAVIGATION_2D;
-						break;
-					case PROPERTY_HINT_LAYERS_3D_RENDER:
-						lt = EditorPropertyLayers::LAYER_RENDER_3D;
-						break;
-					case PROPERTY_HINT_LAYERS_3D_PHYSICS:
-						lt = EditorPropertyLayers::LAYER_PHYSICS_3D;
-						break;
-					case PROPERTY_HINT_LAYERS_3D_NAVIGATION:
-						lt = EditorPropertyLayers::LAYER_NAVIGATION_3D;
-						break;
-					case PROPERTY_HINT_LAYERS_AVOIDANCE:
-						lt = EditorPropertyLayers::LAYER_AVOIDANCE;
-						break;
-					default: {
-					} //compiler could be smarter here and realize this can't happen
-				}
-				EditorPropertyLayers *editor = memnew(EditorPropertyLayers);
-				editor->setup(lt);
-				return editor;
+			} else if (p_hint == PROPERTY_HINT_LAYERS_2D_PHYSICS) {
+				return memnew(EditorPropertyLayers(ProjectSettings::LAYER_PHYSICS_2D));
+			} else if (p_hint == PROPERTY_HINT_LAYERS_2D_RENDER) {
+				return memnew(EditorPropertyLayers(ProjectSettings::LAYER_RENDER_2D));
+			} else if (p_hint == PROPERTY_HINT_LAYERS_2D_NAVIGATION) {
+				return memnew(EditorPropertyLayers(ProjectSettings::LAYER_NAVIGATION_2D));
+			} else if (p_hint == PROPERTY_HINT_LAYERS_3D_PHYSICS) {
+				return memnew(EditorPropertyLayers(ProjectSettings::LAYER_PHYSICS_3D));
+			} else if (p_hint == PROPERTY_HINT_LAYERS_3D_RENDER) {
+				return memnew(EditorPropertyLayers(ProjectSettings::LAYER_RENDER_3D));
+			} else if (p_hint == PROPERTY_HINT_LAYERS_3D_NAVIGATION) {
+				return memnew(EditorPropertyLayers(ProjectSettings::LAYER_NAVIGATION_3D));
+			} else if (p_hint == PROPERTY_HINT_LAYERS_AVOIDANCE) {
+				return memnew(EditorPropertyLayers(ProjectSettings::LAYER_AVOIDANCE));
 			} else if (p_hint == PROPERTY_HINT_OBJECT_ID) {
 				EditorPropertyObjectID *editor = memnew(EditorPropertyObjectID);
 				editor->setup(p_hint_text);

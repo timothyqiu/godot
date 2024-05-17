@@ -72,6 +72,13 @@
 				[b]Note:[/b] Both the script and the icon paths are local to the project filesystem, i.e. they start with [code]res://[/code].
 			</description>
 		</method>
+		<method name="get_layer_count" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="type" type="int" enum="ProjectSettings.LayerType" />
+			<description>
+				Returns the number of layers of the specified type.
+			</description>
+		</method>
 		<method name="get_order" qualifiers="const">
 			<return type="int" />
 			<param index="0" name="name" type="String" />
@@ -2940,4 +2947,27 @@
 			</description>
 		</signal>
 	</signals>
+	<constants>
+		<constant name="LAYER_PHYSICS_2D" value="0" enum="LayerType">
+			2D physics layer.
+		</constant>
+		<constant name="LAYER_RENDER_2D" value="1" enum="LayerType">
+			2D render layer.
+		</constant>
+		<constant name="LAYER_NAVIGATION_2D" value="2" enum="LayerType">
+			2D navigation layer.
+		</constant>
+		<constant name="LAYER_PHYSICS_3D" value="3" enum="LayerType">
+			3D physics layer.
+		</constant>
+		<constant name="LAYER_RENDER_3D" value="4" enum="LayerType">
+			3D render layer.
+		</constant>
+		<constant name="LAYER_NAVIGATION_3D" value="5" enum="LayerType">
+			3D navigation layer.
+		</constant>
+		<constant name="LAYER_AVOIDANCE" value="6" enum="LayerType">
+			Navigation avoidance layer.
+		</constant>
+	</constants>
 </class>

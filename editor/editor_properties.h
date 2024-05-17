@@ -31,6 +31,7 @@
 #ifndef EDITOR_PROPERTIES_H
 #define EDITOR_PROPERTIES_H
 
+#include "core/config/project_settings.h"
 #include "editor/editor_inspector.h"
 
 class CheckBox;
@@ -301,22 +302,11 @@ public:
 class EditorPropertyLayers : public EditorProperty {
 	GDCLASS(EditorPropertyLayers, EditorProperty);
 
-public:
-	enum LayerType {
-		LAYER_PHYSICS_2D,
-		LAYER_RENDER_2D,
-		LAYER_NAVIGATION_2D,
-		LAYER_PHYSICS_3D,
-		LAYER_RENDER_3D,
-		LAYER_NAVIGATION_3D,
-		LAYER_AVOIDANCE,
-	};
-
 private:
 	EditorPropertyLayersGrid *grid = nullptr;
 	void _grid_changed(uint32_t p_grid);
 	String basename;
-	LayerType layer_type;
+	ProjectSettings::LayerType layer_type;
 	PopupMenu *layers = nullptr;
 	TextureButton *button = nullptr;
 
@@ -327,14 +317,12 @@ private:
 protected:
 	void _notification(int p_what);
 	virtual void _set_read_only(bool p_read_only) override;
-	static void _bind_methods();
 
 public:
-	void setup(LayerType p_layer_type);
 	void set_layer_name(int p_index, const String &p_name);
 	String get_layer_name(int p_index) const;
 	virtual void update_property() override;
-	EditorPropertyLayers();
+	EditorPropertyLayers(ProjectSettings::LayerType p_layer_type);
 };
 
 class EditorPropertyInteger : public EditorProperty {

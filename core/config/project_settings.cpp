@@ -39,7 +39,6 @@
 #include "core/io/marshalls.h"
 #include "core/io/resource_uid.h"
 #include "core/object/script_language.h"
-#include "core/os/keyboard.h"
 #include "core/templates/rb_set.h"
 #include "core/variant/typed_array.h"
 #include "core/variant/variant_parser.h"
@@ -1341,6 +1340,24 @@ const HashMap<StringName, HashSet<StringName>> &ProjectSettings::get_scene_group
 	return scene_groups_cache;
 }
 
+int ProjectSettings::get_layer_count(LayerType p_type) const {
+	switch (p_type) {
+		case LAYER_RENDER_2D:
+		case LAYER_RENDER_3D: {
+			return 20;
+		} break;
+
+		case LAYER_PHYSICS_2D:
+		case LAYER_PHYSICS_3D:
+		case LAYER_NAVIGATION_2D:
+		case LAYER_NAVIGATION_3D:
+		case LAYER_AVOIDANCE: {
+			return 32;
+		} break;
+	}
+	ERR_FAIL_V_MSG(0, "Unknown layer type: " + itos(p_type));
+}
+
 #ifdef TOOLS_ENABLED
 void ProjectSettings::get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const {
 	const String pf = p_function;
@@ -1381,8 +1398,17 @@ void ProjectSettings::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("load_resource_pack", "pack", "replace_files", "offset"), &ProjectSettings::_load_resource_pack, DEFVAL(true), DEFVAL(0));
 
 	ClassDB::bind_method(D_METHOD("save_custom", "file"), &ProjectSettings::_save_custom_bnd);
+	ClassDB::bind_method(D_METHOD("get_layer_count", "type"), &ProjectSettings::get_layer_count);
 
 	ADD_SIGNAL(MethodInfo("settings_changed"));
+
+	BIND_ENUM_CONSTANT(LAYER_PHYSICS_2D);
+	BIND_ENUM_CONSTANT(LAYER_RENDER_2D);
+	BIND_ENUM_CONSTANT(LAYER_NAVIGATION_2D);
+	BIND_ENUM_CONSTANT(LAYER_PHYSICS_3D);
+	BIND_ENUM_CONSTANT(LAYER_RENDER_3D);
+	BIND_ENUM_CONSTANT(LAYER_NAVIGATION_3D);
+	BIND_ENUM_CONSTANT(LAYER_AVOIDANCE);
 }
 
 void ProjectSettings::_add_builtin_input_map() {
