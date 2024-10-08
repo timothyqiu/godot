@@ -193,9 +193,9 @@ void Control::reparent(Node *p_parent, bool p_keep_global_transform) {
 
 // Editor integration.
 
-int Control::root_layout_direction = 0;
+Node::ResolvedLayoutDirection Control::root_layout_direction = Node::RESOLVED_LAYOUT_DIRECTION_APPLICATION_LOCALE;
 
-void Control::set_root_layout_direction(int p_root_dir) {
+void Control::set_root_layout_direction(ResolvedLayoutDirection p_root_dir) {
 	root_layout_direction = p_root_dir;
 }
 
@@ -3057,76 +3057,83 @@ Control::LayoutDirection Control::get_layout_direction() const {
 bool Control::is_layout_rtl() const {
 	ERR_READ_THREAD_GUARD_V(false);
 	if (data.is_rtl_dirty) {
+		const ResolvedLayoutDirection direction = _get_resolved_layout_direction();
+		switch (direction) {
+			case RESOLVED_LAYOUT_DIRECTION_APPLICATION_LOCALE: {
+				const String &locale = TranslationServer::get_singleton()->get_tool_locale();
+				const_cast<Control *>(this)->data.is_rtl = TS->is_locale_right_to_left(locale);
+			} break;
+
+			case RESOLVED_LAYOUT_DIRECTION_LTR: {
+				const_cast<Control *>(this)->data.is_rtl = false;
+			} break;
+
+			case RESOLVED_LAYOUT_DIRECTION_RTL: {
+				const_cast<Control *>(this)->data.is_rtl = true;
+			} break;
+
+			case RESOLVED_LAYOUT_DIRECTION_SYSTEM_LOCALE: {
+				const String &locale = OS::get_singleton()->get_locale();
+				const_cast<Control *>(this)->data.is_rtl = TS->is_locale_right_to_left(locale);
+			} break;
+
+			default: {
+				ERR_FAIL_V_MSG(false, "Unexpected resolved layout direction: " + itos(direction));
+			} break;
+		}
 		const_cast<Control *>(this)->data.is_rtl_dirty = false;
-		if (data.layout_dir == LAYOUT_DIRECTION_INHERITED) {
+	}
+	return data.is_rtl;
+}
+
+Node::ResolvedLayoutDirection Control::_resolve_layout_direction() const {
+	switch (data.layout_dir) {
+		case LAYOUT_DIRECTION_LTR: {
+			return RESOLVED_LAYOUT_DIRECTION_LTR;
+		} break;
+
+		case LAYOUT_DIRECTION_RTL: {
+			return RESOLVED_LAYOUT_DIRECTION_RTL;
+		} break;
+
+		case LAYOUT_DIRECTION_LOCALE: {
+			if (GLOBAL_GET(SNAME("internationalization/rendering/force_right_to_left_layout_direction"))) {
+				return RESOLVED_LAYOUT_DIRECTION_RTL;
+			}
+			return RESOLVED_LAYOUT_DIRECTION_APPLICATION_LOCALE;
+		} break;
+
+		case LAYOUT_DIRECTION_INHERITED: {
 #ifdef TOOLS_ENABLED
 			if (is_part_of_edited_scene() && GLOBAL_GET(SNAME("internationalization/rendering/force_right_to_left_layout_direction"))) {
-				const_cast<Control *>(this)->data.is_rtl = true;
-				return data.is_rtl;
+				return RESOLVED_LAYOUT_DIRECTION_RTL;
 			}
 			if (is_inside_tree()) {
 				Node *edited_scene_root = get_tree()->get_edited_scene_root();
 				if (edited_scene_root == this) {
-					int proj_root_layout_direction = GLOBAL_GET(SNAME("internationalization/rendering/root_node_layout_direction"));
-					if (proj_root_layout_direction == 1) {
-						const_cast<Control *>(this)->data.is_rtl = false;
-					} else if (proj_root_layout_direction == 2) {
-						const_cast<Control *>(this)->data.is_rtl = true;
-					} else if (proj_root_layout_direction == 3) {
-						String locale = OS::get_singleton()->get_locale();
-						const_cast<Control *>(this)->data.is_rtl = TS->is_locale_right_to_left(locale);
-					} else {
-						String locale = TranslationServer::get_singleton()->get_tool_locale();
-						const_cast<Control *>(this)->data.is_rtl = TS->is_locale_right_to_left(locale);
-					}
-					return data.is_rtl;
+					return (ResolvedLayoutDirection)GLOBAL_GET(SNAME("internationalization/rendering/root_node_layout_direction")).operator int();
 				}
 			}
 #else
 			if (GLOBAL_GET(SNAME("internationalization/rendering/force_right_to_left_layout_direction"))) {
-				const_cast<Control *>(this)->data.is_rtl = true;
-				return data.is_rtl;
+				return RESOLVED_LAYOUT_DIRECTION_RTL;
 			}
 #endif
-			Node *parent_node = get_parent();
-			while (parent_node) {
-				Control *parent_control = Object::cast_to<Control>(parent_node);
-				if (parent_control) {
-					const_cast<Control *>(this)->data.is_rtl = parent_control->is_layout_rtl();
-					return data.is_rtl;
-				}
 
-				Window *parent_window = Object::cast_to<Window>(parent_node);
-				if (parent_window) {
-					const_cast<Control *>(this)->data.is_rtl = parent_window->is_layout_rtl();
-					return data.is_rtl;
-				}
-				parent_node = parent_node->get_parent();
-			}
-
-			if (root_layout_direction == 1) {
-				const_cast<Control *>(this)->data.is_rtl = false;
-			} else if (root_layout_direction == 2) {
-				const_cast<Control *>(this)->data.is_rtl = true;
-			} else if (root_layout_direction == 3) {
-				String locale = OS::get_singleton()->get_locale();
-				const_cast<Control *>(this)->data.is_rtl = TS->is_locale_right_to_left(locale);
-			} else {
-				String locale = TranslationServer::get_singleton()->get_tool_locale();
-				const_cast<Control *>(this)->data.is_rtl = TS->is_locale_right_to_left(locale);
-			}
-		} else if (data.layout_dir == LAYOUT_DIRECTION_LOCALE) {
-			if (GLOBAL_GET(SNAME("internationalization/rendering/force_right_to_left_layout_direction"))) {
-				const_cast<Control *>(this)->data.is_rtl = true;
-			} else {
-				String locale = TranslationServer::get_singleton()->get_tool_locale();
-				const_cast<Control *>(this)->data.is_rtl = TS->is_locale_right_to_left(locale);
-			}
-		} else {
-			const_cast<Control *>(this)->data.is_rtl = (data.layout_dir == LAYOUT_DIRECTION_RTL);
-		}
+			// Either the same as parent or use the root layout direction.
+			return Node::_get_resolved_layout_direction();
+		} break;
 	}
-	return data.is_rtl;
+
+	ERR_FAIL_V_MSG(RESOLVED_LAYOUT_DIRECTION_APPLICATION_LOCALE, "Unexpected layout direction: " + itos(data.layout_dir));
+}
+
+Node::ResolvedLayoutDirection Control::_get_resolved_layout_direction() const {
+	if (data.is_resolved_layout_dir_dirty) {
+		data.resolved_layout_dir = _resolve_layout_direction();
+		data.is_resolved_layout_dir_dirty = false;
+	}
+	return data.resolved_layout_dir;
 }
 
 void Control::set_localize_numeral_system(bool p_enable) {
@@ -3240,6 +3247,7 @@ void Control::_notification(int p_notification) {
 
 		case NOTIFICATION_POST_ENTER_TREE: {
 			data.is_rtl_dirty = true;
+			data.is_resolved_layout_dir_dirty = true;
 			update_minimum_size();
 			_size_changed();
 		} break;
@@ -3259,6 +3267,7 @@ void Control::_notification(int p_notification) {
 
 		case NOTIFICATION_ENTER_CANVAS: {
 			data.is_rtl_dirty = true;
+			data.is_resolved_layout_dir_dirty = true;
 
 			CanvasItem *node = this;
 			bool has_parent_control = false;
@@ -3320,6 +3329,7 @@ void Control::_notification(int p_notification) {
 
 			data.parent_canvas_item = nullptr;
 			data.is_rtl_dirty = true;
+			data.is_resolved_layout_dir_dirty = true;
 		} break;
 
 		case NOTIFICATION_CHILD_ORDER_CHANGED: {
@@ -3382,6 +3392,7 @@ void Control::_notification(int p_notification) {
 		case NOTIFICATION_LAYOUT_DIRECTION_CHANGED: {
 			if (is_inside_tree()) {
 				data.is_rtl_dirty = true;
+				data.is_resolved_layout_dir_dirty = true;
 
 				_invalidate_theme_cache();
 				_update_theme_item_cache();

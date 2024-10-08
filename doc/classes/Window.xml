@@ -108,12 +108,6 @@
 				Returns [code]true[/code] if the [param flag] is set.
 			</description>
 		</method>
-		<method name="get_layout_direction" qualifiers="const">
-			<return type="int" enum="Window.LayoutDirection" />
-			<description>
-				Returns layout direction and text writing direction.
-			</description>
-		</method>
 		<method name="get_position_with_decorations" qualifiers="const">
 			<return type="Vector2i" />
 			<description>
@@ -529,13 +523,6 @@
 				Moves IME to the given position.
 			</description>
 		</method>
-		<method name="set_layout_direction">
-			<return type="void" />
-			<param index="0" name="direction" type="int" enum="Window.LayoutDirection" />
-			<description>
-				Sets layout direction and text writing direction. Right-to-left layouts are necessary for certain languages (e.g. Arabic and Hebrew).
-			</description>
-		</method>
 		<method name="set_unparent_when_invisible">
 			<return type="void" />
 			<param index="0" name="unparent" type="bool" />
@@ -603,6 +590,9 @@
 		</member>
 		<member name="keep_title_visible" type="bool" setter="set_keep_title_visible" getter="get_keep_title_visible" default="false">
 			If [code]true[/code], the [Window] width is expanded to keep the title bar text fully visible.
+		</member>
+		<member name="layout_direction" type="int" setter="set_layout_direction" getter="get_layout_direction" enum="Window.LayoutDirection" default="0">
+			Controls layout direction and text writing direction. Right-to-left layouts are necessary for certain languages (e.g. Arabic and Hebrew).
 		</member>
 		<member name="max_size" type="Vector2i" setter="set_max_size" getter="get_max_size" default="Vector2i(0, 0)">
 			If non-zero, the [Window] can't be resized to be bigger than this size.

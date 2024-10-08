@@ -235,7 +235,7 @@ private:
 
 	Ref<Shortcut> debugger_stop_shortcut;
 
-	static int root_layout_direction;
+	static ResolvedLayoutDirection root_layout_direction;
 
 protected:
 	virtual Rect2i _popup_adjust_rect() const { return Rect2i(); }
@@ -243,6 +243,8 @@ protected:
 
 	virtual void _update_theme_item_cache();
 	virtual void _input_from_window(const Ref<InputEvent> &p_event) {}
+
+	virtual ResolvedLayoutDirection _get_resolved_layout_direction() const override;
 
 	void _notification(int p_what);
 	static void _bind_methods();
@@ -264,7 +266,7 @@ public:
 		NOTIFICATION_THEME_CHANGED = 32
 	};
 
-	static void set_root_layout_direction(int p_root_dir);
+	static void set_root_layout_direction(ResolvedLayoutDirection p_root_dir);
 
 	void set_title(const String &p_title);
 	String get_title() const;

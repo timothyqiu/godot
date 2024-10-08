@@ -123,6 +123,13 @@ public:
 		AUTO_TRANSLATE_MODE_DISABLED,
 	};
 
+	enum ResolvedLayoutDirection {
+		RESOLVED_LAYOUT_DIRECTION_APPLICATION_LOCALE,
+		RESOLVED_LAYOUT_DIRECTION_LTR,
+		RESOLVED_LAYOUT_DIRECTION_RTL,
+		RESOLVED_LAYOUT_DIRECTION_SYSTEM_LOCALE,
+	};
+
 	struct Comparator {
 		bool operator()(const Node *p_a, const Node *p_b) const { return p_b->is_greater_than(p_a); }
 	};
@@ -344,6 +351,8 @@ protected:
 	virtual void owner_changed_notify();
 
 	void _propagate_replace_owner(Node *p_owner, Node *p_by_owner);
+
+	virtual ResolvedLayoutDirection _get_resolved_layout_direction() const;
 
 	static void _bind_methods();
 	static String _get_name_num_separator();

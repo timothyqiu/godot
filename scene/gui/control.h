@@ -256,6 +256,9 @@ private:
 		bool is_rtl_dirty = true;
 		bool is_rtl = false;
 
+		mutable ResolvedLayoutDirection resolved_layout_dir = RESOLVED_LAYOUT_DIRECTION_APPLICATION_LOCALE;
+		mutable bool is_resolved_layout_dir_dirty = true;
+
 		bool localize_numeral_system = true;
 
 		// Extra properties.
@@ -320,7 +323,8 @@ private:
 
 	// Extra properties.
 
-	static int root_layout_direction;
+	static ResolvedLayoutDirection root_layout_direction;
+	ResolvedLayoutDirection _resolve_layout_direction() const;
 
 	String get_tooltip_text() const;
 
@@ -342,6 +346,8 @@ protected:
 	// Internationalization.
 
 	virtual TypedArray<Vector3i> structured_text_parser(TextServer::StructuredTextParser p_parser_type, const Array &p_args, const String &p_text) const;
+
+	virtual ResolvedLayoutDirection _get_resolved_layout_direction() const override;
 
 	// Base object overrides.
 
@@ -408,7 +414,7 @@ public:
 
 	// Editor integration.
 
-	static void set_root_layout_direction(int p_root_dir);
+	static void set_root_layout_direction(ResolvedLayoutDirection p_root_dir);
 
 	PackedStringArray get_configuration_warnings() const override;
 #ifdef TOOLS_ENABLED

@@ -1366,6 +1366,17 @@ void Node::_propagate_translation_domain_dirty() {
 	notification(NOTIFICATION_TRANSLATION_CHANGED);
 }
 
+Node::ResolvedLayoutDirection Node::_get_resolved_layout_direction() const {
+	// Regular nodes simply inherit the layout direction from their parent.
+	// Controls and Windows override this method to return their own layout direction.
+	if (data.parent) {
+		return data.parent->_get_resolved_layout_direction();
+	}
+
+	// The root node.
+	return (ResolvedLayoutDirection)GLOBAL_GET(SNAME("internationalization/rendering/root_node_layout_direction")).operator int();
+}
+
 StringName Node::get_name() const {
 	return data.name;
 }
