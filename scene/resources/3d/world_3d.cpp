@@ -36,6 +36,15 @@
 #include "scene/resources/environment.h"
 #include "servers/navigation_server_3d.h"
 
+void World3D::_on_sdfgi_changed() {
+	DEV_ASSERT(environment.is_valid());
+	if (environment->is_sdfgi_enabled()) {
+		static const uint32_t frames_to_converge[RS::ENV_SDFGI_CONVERGE_MAX] = { 5, 10, 15, 20, 25, 30 };
+		uint32_t frames = frames_to_converge[int(GLOBAL_GET("rendering/global_illumination/sdfgi/frames_to_converge"))];
+		OS::get_singleton()->request_low_processor_usage_mode_redraws(frames);
+	}
+}
+
 void World3D::_register_camera(Camera3D *p_camera) {
 	cameras.insert(p_camera);
 }
@@ -82,9 +91,14 @@ void World3D::set_environment(const Ref<Environment> &p_environment) {
 		return;
 	}
 
+	if (environment.is_valid()) {
+		environment->disconnect(SNAME("sdfgi_changed"), callable_mp(this, &World3D::_on_sdfgi_changed));
+	}
+
 	environment = p_environment;
 	if (environment.is_valid()) {
 		RS::get_singleton()->scenario_set_environment(scenario, environment->get_rid());
+		environment->connect(SNAME("sdfgi_changed"), callable_mp(this, &World3D::_on_sdfgi_changed));
 	} else {
 		RS::get_singleton()->scenario_set_environment(scenario, RID());
 	}

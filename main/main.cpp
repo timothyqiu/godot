@@ -4611,7 +4611,7 @@ uint64_t Main::last_ticks = 0;
 uint32_t Main::frames = 0;
 uint32_t Main::hide_print_fps_attempts = 3;
 uint32_t Main::frame = 0;
-bool Main::force_redraw_requested = false;
+uint32_t Main::force_redraws_requested = 0;
 int Main::iterating = 0;
 
 bool Main::is_iterating() {
@@ -4771,16 +4771,15 @@ bool Main::iteration() {
 			RenderingServer::get_singleton()->is_render_loop_enabled();
 
 	if (wants_present || has_pending_resources_for_processing) {
-		wants_present |= force_redraw_requested;
-		if ((!force_redraw_requested) && OS::get_singleton()->is_in_low_processor_usage_mode()) {
-			if (RenderingServer::get_singleton()->has_changed()) {
-				RenderingServer::get_singleton()->draw(wants_present, scaled_step); // flush visual commands
-				Engine::get_singleton()->increment_frames_drawn();
-			}
-		} else {
-			RenderingServer::get_singleton()->draw(wants_present, scaled_step); // flush visual commands
+		bool force = force_redraws_requested > 0;
+		if (force || !OS::get_singleton()->is_in_low_processor_usage_mode() || RenderingServer::get_singleton()->has_changed()) {
+			// Flush visual commands.
+			RenderingServer::get_singleton()->draw(wants_present || force, scaled_step);
 			Engine::get_singleton()->increment_frames_drawn();
-			force_redraw_requested = false;
+
+			if (force_redraws_requested > 0) {
+				force_redraws_requested--;
+			}
 		}
 	}
 
@@ -4884,8 +4883,11 @@ bool Main::iteration() {
 	return exit;
 }
 
-void Main::force_redraw() {
-	force_redraw_requested = true;
+void Main::force_redraw(uint32_t p_count) {
+	if (p_count == 0) {
+		return;
+	}
+	force_redraws_requested = MAX(force_redraws_requested, p_count);
 }
 
 /* Engine deinitialization

@@ -179,6 +179,7 @@ public:
 	virtual bool is_in_low_processor_usage_mode() const;
 	virtual void set_low_processor_usage_mode_sleep_usec(int p_usec);
 	virtual int get_low_processor_usage_mode_sleep_usec() const;
+	virtual void request_low_processor_usage_mode_redraws(int p_count);
 
 	void set_delta_smoothing(bool p_enabled);
 	bool is_delta_smoothing_enabled() const;

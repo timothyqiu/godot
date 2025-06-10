@@ -54,7 +54,7 @@ class Main {
 	static uint32_t hide_print_fps_attempts;
 	static uint32_t frames;
 	static uint32_t frame;
-	static bool force_redraw_requested;
+	static uint32_t force_redraws_requested;
 	static int iterating;
 
 public:
@@ -79,7 +79,7 @@ public:
 	static int start();
 
 	static bool iteration();
-	static void force_redraw();
+	static void force_redraw(uint32_t p_count = 1);
 
 	static bool is_iterating();
 

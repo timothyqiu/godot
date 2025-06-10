@@ -36,6 +36,7 @@
 #include "core/io/json.h"
 #include "core/os/midi_driver.h"
 #include "core/version_generated.gen.h"
+#include "main/main.h"
 
 #include <cstdarg>
 
@@ -157,6 +158,12 @@ void OS::set_low_processor_usage_mode_sleep_usec(int p_usec) {
 
 int OS::get_low_processor_usage_mode_sleep_usec() const {
 	return low_processor_usage_mode_sleep_usec;
+}
+
+void OS::request_low_processor_usage_mode_redraws(int p_count) {
+	if (low_processor_usage_mode) {
+		Main::force_redraw(p_count);
+	}
 }
 
 void OS::set_delta_smoothing(bool p_enabled) {

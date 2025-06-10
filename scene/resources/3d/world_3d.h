@@ -57,6 +57,8 @@ private:
 
 	HashSet<Camera3D *> cameras;
 
+	void _on_sdfgi_changed();
+
 protected:
 	static void _bind_methods();
 

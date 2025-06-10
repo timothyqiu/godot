@@ -449,6 +449,9 @@ void Environment::_update_ssil() {
 // SDFGI
 
 void Environment::set_sdfgi_enabled(bool p_enabled) {
+	if (p_enabled == sdfgi_enabled) {
+		return;
+	}
 	sdfgi_enabled = p_enabled;
 	_update_sdfgi();
 }
@@ -460,7 +463,10 @@ bool Environment::is_sdfgi_enabled() const {
 void Environment::set_sdfgi_cascades(int p_cascades) {
 	ERR_FAIL_COND_MSG(p_cascades < 1 || p_cascades > 8, "Invalid number of SDFGI cascades (must be between 1 and 8).");
 	sdfgi_cascades = p_cascades;
-	_update_sdfgi();
+
+	if (sdfgi_enabled) {
+		_update_sdfgi();
+	}
 }
 
 int Environment::get_sdfgi_cascades() const {
@@ -469,7 +475,10 @@ int Environment::get_sdfgi_cascades() const {
 
 void Environment::set_sdfgi_min_cell_size(float p_size) {
 	sdfgi_min_cell_size = p_size;
-	_update_sdfgi();
+
+	if (sdfgi_enabled) {
+		_update_sdfgi();
+	}
 }
 
 float Environment::get_sdfgi_min_cell_size() const {
@@ -482,7 +491,10 @@ void Environment::set_sdfgi_max_distance(float p_distance) {
 		p_distance *= 0.5; //halve for each cascade
 	}
 	sdfgi_min_cell_size = p_distance;
-	_update_sdfgi();
+
+	if (sdfgi_enabled) {
+		_update_sdfgi();
+	}
 }
 
 float Environment::get_sdfgi_max_distance() const {
@@ -496,7 +508,10 @@ float Environment::get_sdfgi_max_distance() const {
 
 void Environment::set_sdfgi_cascade0_distance(float p_distance) {
 	sdfgi_min_cell_size = p_distance / 64.0;
-	_update_sdfgi();
+
+	if (sdfgi_enabled) {
+		_update_sdfgi();
+	}
 }
 
 float Environment::get_sdfgi_cascade0_distance() const {
@@ -505,7 +520,10 @@ float Environment::get_sdfgi_cascade0_distance() const {
 
 void Environment::set_sdfgi_y_scale(SDFGIYScale p_y_scale) {
 	sdfgi_y_scale = p_y_scale;
-	_update_sdfgi();
+
+	if (sdfgi_enabled) {
+		_update_sdfgi();
+	}
 }
 
 Environment::SDFGIYScale Environment::get_sdfgi_y_scale() const {
@@ -514,7 +532,10 @@ Environment::SDFGIYScale Environment::get_sdfgi_y_scale() const {
 
 void Environment::set_sdfgi_use_occlusion(bool p_enabled) {
 	sdfgi_use_occlusion = p_enabled;
-	_update_sdfgi();
+
+	if (sdfgi_enabled) {
+		_update_sdfgi();
+	}
 }
 
 bool Environment::is_sdfgi_using_occlusion() const {
@@ -523,7 +544,10 @@ bool Environment::is_sdfgi_using_occlusion() const {
 
 void Environment::set_sdfgi_bounce_feedback(float p_amount) {
 	sdfgi_bounce_feedback = p_amount;
-	_update_sdfgi();
+
+	if (sdfgi_enabled) {
+		_update_sdfgi();
+	}
 }
 float Environment::get_sdfgi_bounce_feedback() const {
 	return sdfgi_bounce_feedback;
@@ -531,7 +555,10 @@ float Environment::get_sdfgi_bounce_feedback() const {
 
 void Environment::set_sdfgi_read_sky_light(bool p_enabled) {
 	sdfgi_read_sky_light = p_enabled;
-	_update_sdfgi();
+
+	if (sdfgi_enabled) {
+		_update_sdfgi();
+	}
 }
 
 bool Environment::is_sdfgi_reading_sky_light() const {
@@ -540,7 +567,10 @@ bool Environment::is_sdfgi_reading_sky_light() const {
 
 void Environment::set_sdfgi_energy(float p_energy) {
 	sdfgi_energy = p_energy;
-	_update_sdfgi();
+
+	if (sdfgi_enabled) {
+		_update_sdfgi();
+	}
 }
 
 float Environment::get_sdfgi_energy() const {
@@ -549,7 +579,10 @@ float Environment::get_sdfgi_energy() const {
 
 void Environment::set_sdfgi_normal_bias(float p_bias) {
 	sdfgi_normal_bias = p_bias;
-	_update_sdfgi();
+
+	if (sdfgi_enabled) {
+		_update_sdfgi();
+	}
 }
 
 float Environment::get_sdfgi_normal_bias() const {
@@ -558,7 +591,10 @@ float Environment::get_sdfgi_normal_bias() const {
 
 void Environment::set_sdfgi_probe_bias(float p_bias) {
 	sdfgi_probe_bias = p_bias;
-	_update_sdfgi();
+
+	if (sdfgi_enabled) {
+		_update_sdfgi();
+	}
 }
 
 float Environment::get_sdfgi_probe_bias() const {
@@ -578,6 +614,8 @@ void Environment::_update_sdfgi() {
 			sdfgi_energy,
 			sdfgi_normal_bias,
 			sdfgi_probe_bias);
+
+	emit_signal(SNAME("sdfgi_changed"));
 }
 
 // Glow
@@ -1523,6 +1561,10 @@ void Environment::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "adjustment_contrast", PROPERTY_HINT_RANGE, "0.01,8,0.01"), "set_adjustment_contrast", "get_adjustment_contrast");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "adjustment_saturation", PROPERTY_HINT_RANGE, "0.01,8,0.01"), "set_adjustment_saturation", "get_adjustment_saturation");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "adjustment_color_correction", PROPERTY_HINT_RESOURCE_TYPE, "Texture2D,Texture3D"), "set_adjustment_color_correction", "get_adjustment_color_correction");
+
+	// Signals
+
+	ADD_SIGNAL(MethodInfo("sdfgi_changed"));
 
 	// Constants
 

@@ -371,6 +371,13 @@
 			Enables temporal reprojection in the volumetric fog. Temporal reprojection blends the current frame's volumetric fog with the last frame's volumetric fog to smooth out jagged edges. The performance cost is minimal; however, it leads to moving [FogVolume]s and [Light3D]s "ghosting" and leaving a trail behind them. When temporal reprojection is enabled, try to avoid moving [FogVolume]s or [Light3D]s too fast. Short-lived dynamic lighting effects should have [member Light3D.light_volumetric_fog_energy] set to [code]0.0[/code] to avoid ghosting.
 		</member>
 	</members>
+	<signals>
+		<signal name="sdfgi_changed">
+			<description>
+				When [member sdfgi_enabled] is [code]true[/code], emitted when SDFGI related settings are changed. When [member sdfgi_enabled] is [code]false[/code], only emitted when [member sdfgi_enabled] is changed to [code]true[/code].
+			</description>
+		</signal>
+	</signals>
 	<constants>
 		<constant name="BG_CLEAR_COLOR" value="0" enum="BGMode">
 			Clears the background using the clear color defined in [member ProjectSettings.rendering/environment/defaults/default_clear_color].
