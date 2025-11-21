@@ -2607,6 +2607,12 @@ void FileSystemDock::_file_option(int p_option, const Vector<String> &p_selected
 			}
 		} break;
 
+		case FILE_MENU_GENERATE_UID_FILE: {
+			if (!p_selected.is_empty()) {
+				EditorFileSystem::get_singleton()->generate_uid_file(p_selected[0]);
+			}
+		} break;
+
 		case FILE_MENU_NEW_RESOURCE: {
 			new_resource_dialog->popup_create(true);
 		} break;
@@ -2677,6 +2683,8 @@ int FileSystemDock::_get_menu_option_from_key(const Ref<InputEventKey> &p_key) {
 		return FILE_MENU_COPY_ABSOLUTE_PATH;
 	} else if (ED_IS_SHORTCUT("filesystem_dock/copy_uid", p_key)) {
 		return FILE_MENU_COPY_UID;
+	} else if (ED_IS_SHORTCUT("filesystem_dock/generate_uid_file", p_key)) {
+		return FILE_MENU_GENERATE_UID_FILE;
 	} else if (ED_IS_SHORTCUT("filesystem_dock/delete", p_key)) {
 		return FILE_MENU_REMOVE;
 	} else if (ED_IS_SHORTCUT("filesystem_dock/new_folder", p_key)) {
@@ -3422,6 +3430,8 @@ void FileSystemDock::_file_and_folders_fill_popup(PopupMenu *p_popup, const Vect
 		p_popup->add_shortcut(ED_GET_SHORTCUT("filesystem_dock/copy_absolute_path"), FILE_MENU_COPY_ABSOLUTE_PATH);
 		if (ResourceLoader::get_resource_uid(p_paths[0]) != ResourceUID::INVALID_ID) {
 			p_popup->add_icon_shortcut(get_editor_theme_icon(SNAME("Instance")), ED_GET_SHORTCUT("filesystem_dock/copy_uid"), FILE_MENU_COPY_UID);
+		} else if (!EDITOR_GET("filesystem/resources/auto_generate_uid_files")) {
+			p_popup->add_shortcut(ED_GET_SHORTCUT("filesystem_dock/generate_uid_file"), FILE_MENU_GENERATE_UID_FILE);
 		}
 		if (root_path_not_selected) {
 			p_popup->add_icon_shortcut(get_editor_theme_icon(SNAME("Rename")), ED_GET_SHORTCUT("filesystem_dock/rename"), FILE_MENU_RENAME);
@@ -4220,6 +4230,7 @@ FileSystemDock::FileSystemDock() {
 	ED_SHORTCUT("filesystem_dock/copy_path", TTRC("Copy Path"), KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::SHIFT | Key::C);
 	ED_SHORTCUT("filesystem_dock/copy_absolute_path", TTRC("Copy Absolute Path"), KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::ALT | Key::C);
 	ED_SHORTCUT("filesystem_dock/copy_uid", TTRC("Copy UID"), KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::ALT | KeyModifierMask::SHIFT | Key::C);
+	ED_SHORTCUT("filesystem_dock/generate_uid_file", TTRC("Generate UID File"), Key::NONE);
 	ED_SHORTCUT("filesystem_dock/duplicate", TTRC("Duplicate..."), KeyModifierMask::CMD_OR_CTRL | Key::D);
 	ED_SHORTCUT("filesystem_dock/delete", TTRC("Delete"), Key::KEY_DELETE);
 	ED_SHORTCUT("filesystem_dock/new_folder", TTRC("New Folder..."), Key::NONE);

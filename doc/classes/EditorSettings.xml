@@ -880,6 +880,10 @@
 		<member name="filesystem/quick_open_dialog/show_search_highlight" type="bool" setter="" getter="">
 			If [code]true[/code], results will be highlighted with their search matches.
 		</member>
+		<member name="filesystem/resources/auto_generate_uid_files" type="bool" setter="" getter="">
+			If [code]true[/code], the editor will generate [code].uid[/code] files automatically for resource files like [code].gd[/code]. Otherwise, the [code].uid[/code] files can be generated manually by using the [b]Generate UID File[/b] context menu option in the FileSystem dock.
+			[b]Warning:[/b] When working collaboratively, it's recommended to override this option for your project.
+		</member>
 		<member name="filesystem/tools/oidn/oidn_denoise_path" type="String" setter="" getter="">
 			The path to the directory containing the Open Image Denoise (OIDN) executable, used optionally for denoising lightmaps. It can be downloaded from [url=https://www.openimagedenoise.org/downloads.html]openimagedenoise.org[/url].
 			To enable this feature for your specific project, use [member ProjectSettings.rendering/lightmapping/denoising/denoiser].

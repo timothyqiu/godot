@@ -913,12 +913,8 @@ bool EditorFileSystem::_update_scan_actions() {
 						// Re-assign the UID to file, just in case it was pulled from cache.
 						ResourceSaver::set_uid(new_file_path, existing_id);
 					}
-				} else if (ResourceLoader::should_create_uid_file(new_file_path)) {
-					Ref<FileAccess> f = FileAccess::open(new_file_path + ".uid", FileAccess::WRITE);
-					if (f.is_valid()) {
-						ia.new_file->uid = ResourceUID::get_singleton()->create_id_for_path(new_file_path);
-						f->store_line(ResourceUID::get_singleton()->id_to_text(ia.new_file->uid));
-					}
+				} else if (_should_create_uid_file(new_file_path)) {
+					ia.new_file->uid = _create_uid_file(new_file_path, ResourceUID::INVALID_ID);
 				}
 
 				if (ClassDB::is_parent_class(ia.new_file->type, SNAME("Script"))) {
@@ -1353,16 +1349,14 @@ void EditorFileSystem::_process_file_system(const ScannedDirectory *p_scan_dir, 
 				}
 			}
 
-			if (ResourceLoader::should_create_uid_file(path)) {
-				// Create a UID file and new UID, if it's invalid.
-				Ref<FileAccess> f = FileAccess::open(path + ".uid", FileAccess::WRITE);
-				if (f.is_valid()) {
-					if (fi->uid == ResourceUID::INVALID_ID) {
-						fi->uid = ResourceUID::get_singleton()->create_id_for_path(path);
-					} else {
+			if (_should_create_uid_file(path)) {
+				const bool recreate = fi->uid != ResourceUID::INVALID_ID;
+				const ResourceUID::ID uid_written = _create_uid_file(path, fi->uid);
+				if (uid_written != ResourceUID::INVALID_ID) {
+					fi->uid = uid_written;
+					if (recreate) {
 						WARN_PRINT(vformat("Missing .uid file for path \"%s\". The file was re-created from cache.", path));
 					}
-					f->store_line(ResourceUID::get_singleton()->id_to_text(fi->uid));
 				}
 			}
 		}
@@ -1993,6 +1987,15 @@ ResourceUID::ID EditorFileSystem::get_file_uid(const String &p_path) const {
 	return directory->files[file_idx]->uid;
 }
 
+void EditorFileSystem::generate_uid_file(const String &p_path) {
+	int file_idx = -1;
+	EditorFileSystemDirectory *directory = find_file(p_path, &file_idx);
+	if (!directory) {
+		return;
+	}
+	directory->files[file_idx]->uid = _create_uid_file(p_path, directory->files[file_idx]->uid);
+}
+
 EditorFileSystemDirectory *EditorFileSystem::get_filesystem_path(const String &p_path) {
 	if (!filesystem || scanning) {
 		return nullptr;
@@ -2475,16 +2478,8 @@ void EditorFileSystem::update_files(const Vector<String> &p_script_paths) {
 				}
 
 				ResourceUID::get_singleton()->update_cache();
-			} else {
-				if (ResourceLoader::should_create_uid_file(file)) {
-					Ref<FileAccess> f = FileAccess::open(file + ".uid", FileAccess::WRITE);
-					if (f.is_valid()) {
-						const ResourceUID::ID id = ResourceUID::get_singleton()->create_id_for_path(file);
-						ResourceUID::get_singleton()->add_id(id, file);
-						f->store_line(ResourceUID::get_singleton()->id_to_text(id));
-						fi->uid = id;
-					}
-				}
+			} else if (_should_create_uid_file(file)) {
+				fi->uid = _create_uid_file(file, ResourceUID::INVALID_ID);
 			}
 
 			// Update preview
@@ -2563,6 +2558,35 @@ void EditorFileSystem::_register_global_class_script(const String &p_search_path
 	ScriptServer::add_global_class(p_script_update.name, p_script_update.extends, lang, p_target_path, p_script_update.is_abstract, p_script_update.is_tool);
 	EditorNode::get_editor_data().script_class_set_icon_path(p_script_update.name, p_script_update.icon_path);
 	EditorNode::get_editor_data().script_class_set_name(p_target_path, p_script_update.name);
+}
+
+bool EditorFileSystem::_should_create_uid_file(const String &p_res_path) const {
+	if (FileAccess::exists(p_res_path + ".uid")) {
+		return false;
+	}
+	if (!EDITOR_GET("filesystem/resources/auto_generate_uid_files")) {
+		return false;
+	}
+	return ResourceLoader::supports_uid_file(p_res_path);
+}
+
+// Creates a new UID if `p_uid` is INVALID_ID, otherwise uses the provided one.
+// Returns the UID written to the file, or INVALID_ID on error.
+ResourceUID::ID EditorFileSystem::_create_uid_file(const String &p_res_path, ResourceUID::ID p_uid) const {
+	Ref<FileAccess> f = FileAccess::open(p_res_path + ".uid", FileAccess::WRITE);
+	if (f.is_null()) {
+		return ResourceUID::INVALID_ID;
+	}
+
+	ResourceUID::ID id = p_uid;
+	if (id == ResourceUID::INVALID_ID) {
+		id = ResourceUID::get_singleton()->create_id_for_path(p_res_path);
+		ResourceUID::get_singleton()->add_id(id, p_res_path);
+	}
+
+	f->store_line(ResourceUID::get_singleton()->id_to_text(id));
+
+	return id;
 }
 
 void EditorFileSystem::register_global_class_script(const String &p_search_path, const String &p_target_path) {

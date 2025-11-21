@@ -374,6 +374,9 @@ class EditorFileSystem : public Node {
 
 	void _register_global_class_script(const String &p_search_path, const String &p_target_path, const ScriptClassInfoUpdate &p_script_update);
 
+	bool _should_create_uid_file(const String &p_res_path) const;
+	ResourceUID::ID _create_uid_file(const String &p_res_path, ResourceUID::ID p_uid) const;
+
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
@@ -397,6 +400,7 @@ public:
 	String get_file_type(const String &p_file) const;
 	EditorFileSystemDirectory *find_file(const String &p_file, int *r_index) const;
 	ResourceUID::ID get_file_uid(const String &p_path) const;
+	void generate_uid_file(const String &p_path);
 
 	void reimport_files(const Vector<String> &p_files);
 	Error reimport_append(const String &p_file, const HashMap<StringName, Variant> &p_custom_options, const String &p_custom_importer, Variant p_generator_parameters);
